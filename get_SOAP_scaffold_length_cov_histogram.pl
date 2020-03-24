@@ -1,0 +1,48 @@
+$reads = $ARGV[0];
+$length = $ARGV[1];
+
+$current_header = "";
+$current_reads = "";
+my %db;
+
+open (FILE, $reads);
+while($buff = <FILE>){
+	chomp $buff;
+	if(substr($buff,0,1) eq ">"){
+		$header = $buff;	
+		
+		#$current_header =~ m/>(.+)\slength\s(\d+)\scvg_(.+)_tip(.+)/g;
+		$current_header =~ m/>(.+)\s(.+)$/;
+		$id = $1;
+		$cov = $2;		
+		$len = length($current_reads);
+
+		print $id . "\t" . $cov . "\t" . $len . "\n";
+
+		$current_header = $header;
+		$current_reads = "";
+
+	}else{
+		$read = $buff;	
+		$current_reads .= $read;
+	}
+}
+
+$current_header =~ m/>(.+)\slength\s(\d+)\scvg_(.+)_tip(.+)/g;
+$len = $2;
+$id = $1;
+$cov = $3;
+
+print $id . "\t" . $cov . "\t" . $len . "\n";
+
+
+
+
+sub trim($)
+{
+	my $string = shift;
+	$string =~ s/^\s+//;
+	$string =~ s/\s+$//;
+	return $string;
+}
+

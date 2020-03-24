@@ -1,0 +1,121 @@
+#Consolidate multiple SAM aligment files from partitioned-large-database (>4GB)
+
+$file1 = $ARGV[0];
+$file2 = $ARGV[1];
+
+#$SCORE = 15;
+
+my %db;
+my %scores;
+my %reads;
+my %cumulative;
+my %buffers;
+my %heads;
+
+$header = "";
+open(FILE,$file1);
+while ($buff = <FILE>){
+	if($buff =~ m/@/gi){
+		chomp $buff;
+		#$header .= $buff;
+		$heads{$buff}++;	
+		print $buff . "\n";
+		next;
+	}
+
+	@token = split(/\t/, $buff);
+	$name = $token[0];
+	$flag = $token[1];
+	$chr = $token[2];
+	$qscore = int($token[4]);	
+	$read = $token[9];
+	$qual = $token[10];
+
+	#print $flag . "\n";
+	#if(($chr ne "*") && ($flag & 2) && ($qscore >= 15)){
+	if(($chr ne "*") and  ($qscore > 15)){
+		if($db{$name} eq ""){
+			$db{$name} = $buff;
+			$scores{$name} = $qscore;
+		}elsif($db{$name} ne ""){	
+			$db{$name} .= $buff;
+                        $scores{$name} = $qscore;
+		}
+		$reads{$name} = 1;
+	}
+	
+	#$reads{$name} = 1;
+}
+close(FILE);
+
+
+
+my %db2;
+my %scores2;
+open(FILE,$file2);
+while ($buff = <FILE>){
+        if($buff =~ m/@/gi){
+		chomp $buff;
+		if($heads{$buff} eq ""){
+			print $buff . "\n";
+		}
+		$heads{$buff}++;
+                next;
+        }
+
+        @token = split(/\t/, $buff);
+        $name = $token[0];
+        $flag = $token[1];
+        $chr = $token[2];
+	$qscore = int($token[4]);
+        $read = $token[9];
+        $qual = $token[10];
+	
+
+        #if(($chr ne "*") && ($flag & 2) && ($qscore >= 15)){
+        if(($chr ne "*") and  ($qscore > 15)){
+                if($db2{$name} eq ""){
+                        $db2{$name} = $buff;
+			$scores2{$name} = $qscore;
+                }elsif($db2{$name} ne ""){
+			$db2{$name} .= $buff;
+			$scores2{$name} = $qscore;
+		}
+
+	        $reads{$name} = 1;
+	}
+	
+	#$reads{$name} = 1;
+}
+close(FILE);
+
+
+#print $header;
+#for $a (keys %heads){
+	#print $a . "\n";
+#}
+
+for $name (keys %reads){
+	#print $buffers{$name} . "\n";
+
+	$f1 = $db{$name};
+	$f2 = $db2{$name};
+
+	if($f1 ne "" and $f2 ne ""){
+		if($scores{$name} >= $scores2{$name}){
+			print $f1;
+		}else{
+			print $f2;
+		}
+	}elsif($f1 ne "" and $f2 eq ""){
+		print $f1;
+	}elsif($f1 eq "" and $f2 ne ""){
+		print $f2;
+	}
+	
+
+}
+
+
+
+
